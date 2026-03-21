@@ -1,0 +1,65 @@
+{
+	"pages": [
+		{
+			"path": "pages/auth/auth",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "心灵伴侣",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/chat/chat",
+			"style": {
+				"navigationBarTitleText": "对话",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/diary/diary",
+			"style": {
+				"navigationBarTitleText": "日记",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/community/community",
+			"style": {
+				"navigationBarTitleText": "社区",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/profile/profile",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"navigationStyle": "custom"
+			}
+		}
+	],
+	"tabBar": {
+		"color": "#999999",
+		"selectedColor": "#00AB93",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "white",
+		"list": [
+			{ "pagePath": "pages/index/index", "text": "首页", "iconPath": "static/tabbar/home.svg", "selectedIconPath": "static/tabbar/home-active.svg" },
+			{ "pagePath": "pages/diary/diary", "text": "日记", "iconPath": "static/tabbar/diary.svg", "selectedIconPath": "static/tabbar/diary-active.svg" },
+			{ "pagePath": "pages/community/community", "text": "社区", "iconPath": "static/tabbar/community.svg", "selectedIconPath": "static/tabbar/community-active.svg" },
+			{ "pagePath": "pages/profile/profile", "text": "我的", "iconPath": "static/tabbar/profile.svg", "selectedIconPath": "static/tabbar/profile-active.svg" }
+		]
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "心灵伴侣",
+		"navigationBarBackgroundColor": "#ffffff",
+		"backgroundColor": "#f5f5f5"
+	},
+	"uniIdRouter": {}
+}

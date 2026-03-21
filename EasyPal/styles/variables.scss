@@ -1,0 +1,39 @@
+/**
+ * 心灵伴侣主题变量 - 与 React 项目 app/globals.css 语义一致
+ * 在页面/组件中 @import '@/styles/variables.scss' 或依赖 uni.scss 已内置的 $uni-* 与 $ep-*
+ */
+
+/* 语义色 - 对应 :root */
+$ep-background: #fafafa;
+$ep-foreground: #333333;
+$ep-card: #ffffff;
+$ep-card-foreground: #333333;
+$ep-primary: #07c160;
+$ep-primary-foreground: #ffffff;
+$ep-secondary: #f0f9f4;
+$ep-secondary-foreground: #166534;
+$ep-muted: #f5f5f5;
+$ep-muted-foreground: #737373;
+$ep-accent: #e6a23c;
+$ep-accent-foreground: #333333;
+$ep-destructive: #dd524d;
+$ep-destructive-foreground: #ffffff;
+$ep-border: #e5e5e5;
+$ep-input: #f0f0f0;
+$ep-ring: #07c160;
+$ep-chart-1: #07c160;
+$ep-chart-2: #22c55e;
+$ep-success: #07c160;
+$ep-warning: #e6a23c;
+
+/* 圆角 */
+$ep-radius: 12rpx;
+$ep-radius-sm: 8rpx;
+$ep-radius-md: 10rpx;
+$ep-radius-lg: 16rpx;
+$ep-radius-xl: 24rpx;
+
+/* 阴影 */
+$ep-shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+$ep-shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+$ep-shadow-lg: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
