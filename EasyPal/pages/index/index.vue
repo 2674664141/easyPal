@@ -13,6 +13,17 @@ function handleNavigate(page) {
     return
   }
 
+  const subPages = {
+    assessment: '/pages/assessment/assessment',
+    relax: '/pages/relax/relax',
+    articles: '/pages/articles/articles',
+    sos: '/pages/sos/sos'
+  }
+  if (subPages[page]) {
+    uni.navigateTo({ url: subPages[page] })
+    return
+  }
+
   const map = {
     home: '/pages/index/index',
     diary: '/pages/diary/diary',

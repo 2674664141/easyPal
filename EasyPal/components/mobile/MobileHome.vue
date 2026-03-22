@@ -70,6 +70,44 @@
         </view>
       </view>
 
+      <view class="home__section">
+        <text class="home__section-title">心理资源</text>
+        <view class="home__quick-grid">
+          <view
+            v-for="action in moreActions"
+            :key="action.id"
+            class="home__quick-card"
+            @click="onNavigate(action.id)"
+          >
+            <view class="home__quick-icon" :class="'home__quick-icon--' + action.id">
+              <ui-icon :name="action.icon" size="lg" class="home__quick-icon-svg" />
+            </view>
+            <text class="home__quick-label">{{ action.label }}</text>
+            <text class="home__quick-desc">{{ action.desc }}</text>
+          </view>
+        </view>
+      </view>
+
+      <ui-card custom-class="home__sos-card" @click="onNavigate('sos')">
+        <ui-card-content>
+          <view class="home__sos-row">
+            <view class="home__sos-left">
+              <view class="home__sos-icon">
+                <ui-icon name="alert-triangle" size="sm" />
+              </view>
+              <view>
+                <text class="home__sos-title">紧急求助</text>
+                <text class="home__sos-desc">一键联系心理热线/咨询师</text>
+              </view>
+            </view>
+            <view class="home__sos-btn">
+              <ui-icon name="phone" size="xs" />
+              <text>求助</text>
+            </view>
+          </view>
+        </ui-card-content>
+      </ui-card>
+
       <!-- 本周情绪趋势 -->
       <ui-card custom-class="home__chart-card">
         <ui-card-header>
@@ -164,6 +202,12 @@ const quickActions = [
   { id: 'chat', icon: 'message-circle', label: 'AI对话', desc: '与AI助手倾诉' },
   { id: 'diary', icon: 'book-heart', label: '心情日记', desc: '记录今日心情' },
   { id: 'community', icon: 'users', label: '温暖社区', desc: '找到同伴支持' }
+]
+
+const moreActions = [
+  { id: 'assessment', icon: 'clipboard-list', label: '心理测评', desc: '科学评估状态' },
+  { id: 'relax', icon: 'headphones', label: '放松音频', desc: '冥想与呼吸训练' },
+  { id: 'articles', icon: 'book-open', label: '心理文章', desc: '阅读专业建议' }
 ]
 
 const dailyTips = [
@@ -419,6 +463,9 @@ function onNotice() {}
     &--chat { background: #00AB93; }
     &--diary { background: #D6A54D; }
     &--community { background: #75B168; }
+    &--assessment { background: #3b82f6; }
+    &--relax { background: #6366f1; }
+    &--articles { background: #10b981; }
   }
 
   &__quick-icon-svg {
@@ -435,6 +482,62 @@ function onNotice() {}
     font-size: 20rpx;
     color: var(--ep-muted-foreground);
     margin-top: 8rpx;
+  }
+
+  &__sos-card {
+    border: 1rpx solid #fecaca;
+    background: #fff7ed;
+    margin-bottom: 24rpx;
+  }
+
+  &__sos-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16rpx;
+  }
+
+  &__sos-left {
+    display: flex;
+    align-items: center;
+    gap: 14rpx;
+  }
+
+  &__sos-icon {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 16rpx;
+    background: #fee2e2;
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__sos-title {
+    display: block;
+    font-size: 30rpx;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  &__sos-desc {
+    display: block;
+    margin-top: 4rpx;
+    font-size: 22rpx;
+    color: #64748b;
+  }
+
+  &__sos-btn {
+    flex-shrink: 0;
+    border-radius: 999rpx;
+    background: #e11d48;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6rpx;
+    padding: 12rpx 18rpx;
+    font-size: 24rpx;
   }
 
   /* 与原项目一致：border border-border/50 shadow-md */

@@ -41,6 +41,34 @@
 				"navigationBarTitleText": "我的",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/assessment/assessment",
+			"style": {
+				"navigationBarTitleText": "心理测评",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/relax/relax",
+			"style": {
+				"navigationBarTitleText": "放松音频",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/articles/articles",
+			"style": {
+				"navigationBarTitleText": "心理文章",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/sos/sos",
+			"style": {
+				"navigationBarTitleText": "紧急求助",
+				"navigationStyle": "custom"
+			}
 		}
 	],
 	"tabBar": {
