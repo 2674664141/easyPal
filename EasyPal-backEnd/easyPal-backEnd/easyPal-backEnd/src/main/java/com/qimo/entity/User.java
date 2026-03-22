@@ -2,6 +2,7 @@ package com.qimo.entity;
 
 /**
  * 用户表（user）实体。
+ * <p>用户角色通过 {@code user_role} 关联 {@code role} 表，不再使用本表中的单字段角色。</p>
  */
 public class User {
 
@@ -35,8 +36,6 @@ public class User {
   private Integer exp;
   /** 累计经验值 */
   private Integer totalExp;
-  /** 角色：1-学生 2-咨询师 3-管理员 */
-  private Integer role;
   /** 状态：0-禁用 1-正常 */
   private Integer status;
   /** 风险等级：0-低风险 1-中风险 2-高风险 */
@@ -183,15 +182,6 @@ public class User {
 
   public void setTotalExp(Integer totalExp) {
     this.totalExp = totalExp;
-  }
-
-
-  public Integer getRole() {
-    return role;
-  }
-
-  public void setRole(Integer role) {
-    this.role = role;
   }
 
 
