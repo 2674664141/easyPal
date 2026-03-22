@@ -265,13 +265,14 @@
 </template>
 
 <script setup>
-import {  ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import UiButton from '@/components/ui/Button.vue'
 import UiInput from '@/components/ui/Input.vue'
 import UiIcon from '@/components/ui/Icon.vue'
+import { post } from '@/utils/api.js'
 
 const isLogin = ref(true)
-const loginMethod = ref('phone') // phone | account
+const loginMethod = ref('account') // phone | account
 const showPassword = ref(false)
 const agreeTerms = ref(false)
 
@@ -286,9 +287,10 @@ const form = ref({
 const codeCooldown = ref(0)
 let timer = null
 
-function getCode() {
+function startCooldown() {
   if (codeCooldown.value > 0) return
   codeCooldown.value = 60
+  if (timer) clearInterval(timer)
   timer = setInterval(() => {
     codeCooldown.value -= 1
     if (codeCooldown.value <= 0) {
@@ -298,33 +300,114 @@ function getCode() {
   }, 1000)
 }
 
-function submitLogin() {
-  if (loginMethod.value !== 'account') {
-    uni.showToast({ title: '请使用账号登录（演示）', icon: 'none' })
+/** 注册用 register；手机号登录用 login_sms */
+function getSmsScene() {
+  if (!isLogin.value) return 'register'
+  if (loginMethod.value === 'phone') return 'login_sms'
+  return null
+}
+
+async function getCode() {
+  if (codeCooldown.value > 0) return
+  const scene = getSmsScene()
+  if (!scene) {
+    uni.showToast({ title: '当前为账号登录，无需验证码', icon: 'none' })
     return
   }
+  const phone = String(form.value.phone || '').trim()
+  if (!/^1[3-9]\d{9}$/.test(phone)) {
+    uni.showToast({ title: '请输入正确手机号', icon: 'none' })
+    return
+  }
+  try {
+    await post('/api/auth/sms/send', { phone, scene })
+    uni.showToast({ title: '验证码已发送（开发环境请看后端日志）', icon: 'none' })
+    startCooldown()
+  } catch (e) {
+    uni.showToast({ title: e.message || '发送失败', icon: 'none' })
+  }
+}
 
-  const acc = String(form.value.account || '').trim()
-  const pw = String(form.value.password || '').trim()
+function saveSession(data) {
+  if (!data || !data.token) return
+  uni.setStorageSync('ep_token', data.token)
+  uni.setStorageSync('ep_user', data.user || {})
+  uni.setStorageSync('ep_authed', true)
+}
 
-  if (acc === 'klee' && pw === 'klee') {
-    uni.setStorageSync('ep_authed', true)
+async function submitLogin() {
+  try {
+    if (loginMethod.value === 'account') {
+      const acc = String(form.value.account || '').trim()
+      const pw = String(form.value.password || '').trim()
+      if (!acc || !pw) {
+        uni.showToast({ title: '请输入账号和密码', icon: 'none' })
+        return
+      }
+      const data = await post('/api/auth/login/password', { account: acc, password: pw })
+      saveSession(data)
+      uni.showToast({ title: '登录成功', icon: 'success' })
+      uni.switchTab({ url: '/pages/index/index' })
+      return
+    }
+    const phone = String(form.value.phone || '').trim()
+    const code = String(form.value.code || '').trim()
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      uni.showToast({ title: '请输入正确手机号', icon: 'none' })
+      return
+    }
+    if (!code) {
+      uni.showToast({ title: '请输入验证码', icon: 'none' })
+      return
+    }
+    const data = await post('/api/auth/login/sms', { phone, code })
+    saveSession(data)
+    uni.showToast({ title: '登录成功', icon: 'success' })
     uni.switchTab({ url: '/pages/index/index' })
+  } catch (e) {
+    uni.showToast({ title: e.message || '登录失败', icon: 'none' })
+  }
+}
+
+async function submitRegister() {
+  if (!agreeTerms.value) return
+  const nickname = String(form.value.nickname || '').trim()
+  const phone = String(form.value.phone || '').trim()
+  const code = String(form.value.code || '').trim()
+  const password = String(form.value.password || '')
+  if (!nickname) {
+    uni.showToast({ title: '请输入昵称', icon: 'none' })
     return
   }
-
-  uni.showToast({ title: '账号或密码错误', icon: 'none' })
+  if (!/^1[3-9]\d{9}$/.test(phone)) {
+    uni.showToast({ title: '请输入正确手机号', icon: 'none' })
+    return
+  }
+  if (!code) {
+    uni.showToast({ title: '请输入验证码', icon: 'none' })
+    return
+  }
+  if (password.length < 6 || password.length > 20) {
+    uni.showToast({ title: '密码长度为 6~20 位', icon: 'none' })
+    return
+  }
+  try {
+    await post('/api/auth/register', { nickname, phone, code, password })
+    form.value.code = ''
+    form.value.password = ''
+    form.value.account = phone
+    loginMethod.value = 'account'
+    isLogin.value = true
+    uni.showToast({ title: '注册成功，请登录', icon: 'success' })
+  } catch (e) {
+    uni.showToast({ title: e.message || '注册失败', icon: 'none' })
+  }
 }
 
-function submitRegister() {
-  if (!agreeTerms.value) return
-  uni.showToast({ title: '注册（演示）', icon: 'none' })
-}
-
-//onUnload(() => {
- // if (timer) clearInterval(timer)
-  //timer = null
-//})*/
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+  timer = null
+})
 </script>
 
 <style lang="scss" scoped>
