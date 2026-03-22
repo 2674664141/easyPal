@@ -8,7 +8,7 @@
           </view>
           <view class="home__user-info">
             <text class="home__greeting">{{ greeting }}</text>
-            <text class="home__username">李同学</text>
+            <text class="home__username">{{ displayName }}</text>
           </view>
         </view>
 
@@ -37,7 +37,7 @@
               :key="mood.id"
               class="home__mood-item"
               :class="['home__mood-item--' + mood.id, { 'home__mood-item--active': currentMood === mood.id }]"
-              @click="currentMood = mood.id"
+              @click="onSelectMood(mood)"
             >
               <view
                 class="home__mood-icon-wrap"
@@ -170,7 +170,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
+import { getWithAuth, postWithAuth } from '@/utils/api.js'
 import UiCard from '@/components/ui/Card.vue'
 import UiCardHeader from '@/components/ui/CardHeader.vue'
 import UiCardTitle from '@/components/ui/CardTitle.vue'
@@ -182,6 +183,16 @@ const emit = defineEmits(['navigate'])
 
 const noticeCount = ref(2)
 const currentMood = ref(null)
+const displayName = ref('同学')
+
+function syncUserDisplay() {
+  const u = uni.getStorageSync('ep_user')
+  if (u && u.nickname) {
+    displayName.value = u.nickname
+  } else {
+    displayName.value = '同学'
+  }
+}
 
 const greeting = computed(() => {
   const h = new Date().getHours()
@@ -197,6 +208,68 @@ const moodOptions = [
   { id: 'sad', icon: 'frown', label: '低落' },
   { id: 'anxious', icon: 'angry', label: '焦虑' }
 ]
+
+// 与后端 mood 1~5 一致：1开心 2平静 3一般 4低落 5焦虑
+const MOOD_CODE_BY_ID = {
+  happy: 1,
+  calm: 2,
+  neutral: 3,
+  sad: 4,
+  anxious: 5
+}
+const MOOD_ID_BY_CODE = {
+  1: 'happy',
+  2: 'calm',
+  3: 'neutral',
+  4: 'sad',
+  5: 'anxious'
+}
+
+async function loadTodayMood() {
+  if (!uni.getStorageSync('ep_token')) {
+    currentMood.value = null
+    return
+  }
+  try {
+    const data = await getWithAuth('/api/mood/today')
+    if (data && data.mood != null) {
+      currentMood.value = MOOD_ID_BY_CODE[data.mood] || null
+    } else {
+      currentMood.value = null
+    }
+  } catch {
+    // 未登录或网络错误时不打断首页
+  }
+}
+
+async function onSelectMood(mood) {
+  const prev = currentMood.value
+  currentMood.value = mood.id
+  if (!uni.getStorageSync('ep_token')) {
+    currentMood.value = prev
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    return
+  }
+  const code = MOOD_CODE_BY_ID[mood.id]
+  try {
+    await postWithAuth('/api/mood/check-in', { mood: code })
+    uni.showToast({ title: '已记录心情', icon: 'success' })
+  } catch (e) {
+    currentMood.value = prev
+    uni.showToast({ title: e.message || '保存失败', icon: 'none' })
+  }
+}
+
+onMounted(() => {
+  syncUserDisplay()
+  loadTodayMood()
+})
+
+// H5 + KeepAlive 场景下从其它页返回首页会触发；小程序端若也缓存页面同样有效
+onActivated(() => {
+  syncUserDisplay()
+  loadTodayMood()
+})
 
 const quickActions = [
   { id: 'chat', icon: 'message-circle', label: 'AI对话', desc: '与AI助手倾诉' },
