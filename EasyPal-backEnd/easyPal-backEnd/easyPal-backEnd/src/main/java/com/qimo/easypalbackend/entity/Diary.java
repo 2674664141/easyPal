@@ -1,11 +1,17 @@
 package com.qimo.easypalbackend.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
 /**
  * 日记表（diary）实体。
  */
+@TableName("diary")
 public class Diary {
 
   /** 日记ID */
+  @TableId(type = IdType.AUTO)
   private Integer id;
   /** 用户ID */
   private Integer userId;

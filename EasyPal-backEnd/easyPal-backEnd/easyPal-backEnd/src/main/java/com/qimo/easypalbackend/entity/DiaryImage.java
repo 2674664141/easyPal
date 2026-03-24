@@ -1,11 +1,17 @@
 package com.qimo.easypalbackend.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
 /**
  * 日记图片表（diary_image）实体。
  */
+@TableName("diary_image")
 public class DiaryImage {
 
   /** 主键ID */
+  @TableId(type = IdType.AUTO)
   private Integer id;
   /** 日记ID */
   private Integer diaryId;
