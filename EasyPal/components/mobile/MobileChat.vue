@@ -116,7 +116,7 @@
             variant="ghost"
             size="icon"
             :custom-class="isRecording ? 'chat__mic--recording' : ''"
-            @click="isRecording = !isRecording"
+            @click="toggleRecording"
           >
             <ui-icon name="mic" size="md" />
           </ui-button>
@@ -138,7 +138,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onBeforeUnmount } from 'vue'
 import UiCard from '@/components/ui/Card.vue'
 import UiCardContent from '@/components/ui/CardContent.vue'
 import UiButton from '@/components/ui/Button.vue'
@@ -146,6 +146,7 @@ import UiAvatar from '@/components/ui/Avatar.vue'
 import UiBadge from '@/components/ui/Badge.vue'
 import UiInput from '@/components/ui/Input.vue'
 import UiIcon from '@/components/ui/Icon.vue'
+import { API_BASE } from '@/utils/config.js'
 
 const emit = defineEmits(['back'])
 
@@ -162,6 +163,50 @@ const inputValue = ref('')
 const isRecording = ref(false)
 const isTyping = ref(false)
 const scrollToId = ref('')
+const asrDraftText = ref('')
+const asrFinalText = ref('')
+
+/** 当前环境是否支持「边录边传」流式识别（H5 通常不支持 getRecorderManager） */
+let recorderManager = null
+let recorderHandlersBound = false
+let socketTask = null
+
+function getRecorderManagerSafe() {
+  try {
+    if (typeof uni === 'undefined' || typeof uni.getRecorderManager !== 'function') {
+      return null
+    }
+    return uni.getRecorderManager()
+  } catch {
+    return null
+  }
+}
+
+function isStreamingAsrSupported() {
+  const rm = getRecorderManagerSafe()
+  return !!(
+    rm
+    && typeof rm.start === 'function'
+    && typeof rm.onFrameRecorded === 'function'
+    && typeof rm.stop === 'function'
+  )
+}
+
+function bindRecorderHandlersOnce() {
+  if (recorderHandlersBound || !recorderManager) return
+  if (typeof recorderManager.onFrameRecorded !== 'function') return
+  recorderHandlersBound = true
+  recorderManager.onFrameRecorded((res) => {
+    if (!isRecording.value || !socketTask) return
+    const buf = res && res.frameBuffer
+    if (buf) socketTask.send({ data: buf })
+  })
+  recorderManager.onError((e) => {
+    isRecording.value = false
+    uni.showToast({ title: e?.errMsg || '录音失败', icon: 'none' })
+    stopStreamingAsr(false)
+  })
+}
 
 const quickReplies = [
   '我今天有点焦虑',
@@ -185,6 +230,120 @@ function formatTime(date) {
 
 function onBack() {
   emit('back')
+}
+
+function asrWsUrl() {
+  if (API_BASE.startsWith('https://')) {
+    return API_BASE.replace('https://', 'wss://') + '/api/speech/asr/stream'
+  }
+  return API_BASE.replace('http://', 'ws://') + '/api/speech/asr/stream'
+}
+
+function refreshInputFromAsr() {
+  inputValue.value = (asrFinalText.value + asrDraftText.value).trim()
+}
+
+
+function handleAsrMessage(raw) {
+  let payload = null
+  try {
+    payload = typeof raw === 'string' ? JSON.parse(raw) : raw
+  } catch {
+    return
+  }
+  if (!payload || !payload.type) return
+  if (payload.type === 'interim') {
+    asrDraftText.value = payload.text || ''
+    refreshInputFromAsr()
+    return
+  }
+  if (payload.type === 'final') {
+    asrFinalText.value += payload.text || ''
+    asrDraftText.value = ''
+    refreshInputFromAsr()
+    return
+  }
+  if (payload.type === 'error') {
+    uni.showToast({ title: payload.text || '识别异常', icon: 'none' })
+    stopStreamingAsr(false)
+  }
+}
+
+function connectAsrSocket() {
+  return new Promise((resolve, reject) => {
+    socketTask = uni.connectSocket({ url: asrWsUrl() })
+    socketTask.onOpen(() => {
+      socketTask.send({ data: JSON.stringify({ type: 'start' }) })
+      resolve()
+    })
+    socketTask.onMessage((event) => {
+      handleAsrMessage(event.data)
+    })
+    socketTask.onError((err) => {
+      reject(err)
+    })
+    socketTask.onClose(() => {
+      socketTask = null
+    })
+  })
+}
+
+async function startStreamingAsr() {
+  if (!isStreamingAsrSupported()) {
+    uni.showToast({
+      title: '当前运行环境不支持实时语音（请在 App 真机或微信小程序中试用）',
+      icon: 'none',
+      duration: 2800
+    })
+    return
+  }
+  recorderManager = getRecorderManagerSafe()
+  bindRecorderHandlersOnce()
+  try {
+    asrDraftText.value = ''
+    asrFinalText.value = inputValue.value.trim()
+    await connectAsrSocket()
+    recorderManager.start({
+      duration: 10 * 60 * 1000,
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      encodeBitRate: 96000,
+      format: 'PCM',
+      frameSize: 5
+    })
+    isRecording.value = true
+  } catch (e) {
+    isRecording.value = false
+    uni.showToast({ title: e?.errMsg || '实时识别连接失败', icon: 'none' })
+    stopStreamingAsr(false)
+  }
+}
+
+function stopStreamingAsr(showTip = true) {
+  if (isRecording.value && recorderManager && typeof recorderManager.stop === 'function') {
+    try {
+      recorderManager.stop()
+    } catch {
+      // ignore
+    }
+  }
+  isRecording.value = false
+  if (socketTask) {
+    socketTask.send({ data: JSON.stringify({ type: 'stop' }) })
+    socketTask.close({})
+    socketTask = null
+  }
+  asrDraftText.value = ''
+  refreshInputFromAsr()
+  if (showTip) uni.showToast({ title: '已停止识别', icon: 'none' })
+}
+
+async function toggleRecording() {
+  if (isRecording.value) {
+    stopStreamingAsr(true)
+    return
+  }
+  await startStreamingAsr()
 }
 
 async function handleSend() {
@@ -215,6 +374,10 @@ async function handleSend() {
   isTyping.value = false
   nextTick(() => { scrollToId.value = 'msg-end' })
 }
+
+onBeforeUnmount(() => {
+  stopStreamingAsr(false)
+})
 </script>
 
 <style lang="scss" scoped>
